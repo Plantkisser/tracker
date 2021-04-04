@@ -19,10 +19,34 @@ bool Service::onEvent(tracer::event::Type EventType, const void* eventData)
 
   static unsigned event_count = 0;
   DPRINTF("event[%u]: %u/%s, %p", event_count, toUI(EventType), tracer::event::toString(EventType), eventData);
-  return true;//return ++event_count % 3;
+
+  const char* path = NULL;
+  switch(EventType)
+  {
+    case tracer::event::Type::OPEN:
+    case tracer::event::Type::OPENAT:
+    {
+      path = ((tracer::event::data:: Open*) eventData)->data_path; 
+      break;
+    }
+    case tracer::event::Type::EXEC:
+    {
+      path = ((tracer::event::data:: Exec*) eventData)->child_path;
+      break;
+    }
+    default:
+      path = NULL;
+      break;
+  }
+
+
+  return controller_.is_allowed(EventType, path);//return ++event_count % 3;
 }
 
-Service::Service() // may throw
+//config file conatin ip address and port of the server
+//maybe controller_ should start in Service::start
+Service::Service(const char* config_file): // may throw
+controller_(config_file)
 {
   DPRINTF9("'service' created");
 }

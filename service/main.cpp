@@ -18,8 +18,15 @@ static void report_state(const char* state)
   IPRINTF("service '%s' (%s UTC)", state, date_time_string);
 }
 
-int main(int /*argc*/, const char** /*argv*/)
+// argument is a path to the config
+int main(int argc, const char** argv)
 {
+  if (argc != 2)
+  {
+    EPRINTF("wrong arguments");
+    return 0;
+  }
+
   int status = 0;
   report_state("starting");
   try
@@ -31,7 +38,7 @@ int main(int /*argc*/, const char** /*argv*/)
     }
     else
     {
-      Service service;
+      Service service(argv[1]);
       service.start();
       report_state("started");
       while (!global::shutdown)
