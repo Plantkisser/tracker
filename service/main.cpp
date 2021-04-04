@@ -19,13 +19,8 @@ static void report_state(const char* state)
 }
 
 // argument is a path to the config
-int main(int argc, const char** argv)
+int main(int /*argc*/, const char** /*argv*/)
 {
-  if (argc != 2)
-  {
-    EPRINTF("wrong arguments");
-    return 0;
-  }
 
   int status = 0;
   report_state("starting");
@@ -38,7 +33,7 @@ int main(int argc, const char** argv)
     }
     else
     {
-      Service service(argv[1]);
+      Service service("../../controller/config");
       service.start();
       report_state("started");
       while (!global::shutdown)
