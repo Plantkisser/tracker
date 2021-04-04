@@ -114,7 +114,7 @@ static void attach_process(pid_t pid)
 	{
 		configure_attach(pid);
 	}
-	catch (const std::exception error)
+	catch (const std::exception& error)
 	{
 		DPRINTF9("%s", error.what());
 		ptrace(PTRACE_DETACH, pid, NULL, NULL); // this is not necessary because only reason that configure_attach failed is 
@@ -361,7 +361,7 @@ void Tracer:: process_syscall(s_state_info event)
 	{
 		exec_path = get_executable_path(event.pid);
 	}
-	catch(std::exception error)
+	catch(const std::exception& error)
 	{
 		DPRINTF9("%s", error.what());
 		exec_path = NULL;
@@ -587,7 +587,7 @@ void Tracer:: process_event(s_state_info event)
 		break;
 		default:
 		{
-			EPRINTF("Strange event.reason=%d", event.reason);
+			EPRINTF("Strange event.reason=%d",(int) event.reason);
 		}
 	}
 }
@@ -619,7 +619,7 @@ void Tracer:: run_routine()
 				{
 					update_pids();
 				}
-				catch(const std::exception error)
+				catch(const std::exception& error)
 				{
 					DPRINTF9("%s", error.what());
 				}
@@ -633,7 +633,7 @@ void Tracer:: run_routine()
 			{
 				update_pids();
 			}
-			catch(const std::exception error)
+			catch(const std::exception& error)
 			{
 				DPRINTF9("%s", error.what());
 			}
@@ -707,7 +707,7 @@ void Tracer:: update_pids()
 				{
 					attach_process(s_inf.pid);
 				} 
-				catch(std::exception error)
+				catch(const std::exception& error)
 				{
 					DPRINTF9("%s", error.what());
 				}

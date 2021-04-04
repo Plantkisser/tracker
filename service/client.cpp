@@ -19,7 +19,11 @@ bool ClientController:: is_allowed(tracer::event::Type syscall_type, const char*
 {
 	tracer::event::inet::Message request;
 	request.event = syscall_type;
-	sprintf(request.path, "%s", path);
+	if (path)
+		sprintf(request.path, "%s", path);
+	else
+		memset(request.path, 0, sizeof(request.path)); 
+
 	request.decision = false;
 	if (send(server_socket_, &request, sizeof(request), 0) <= 0 || recv(server_socket_, &request, sizeof(request), 0) <= 0) // what if count of bytes doesn't equal size of struct Message
 	{

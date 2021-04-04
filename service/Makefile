@@ -10,8 +10,8 @@ SOURCES += client.cpp
 SOURCES += timer.cpp
 SOURCES += tracer.cpp
 SOURCES += event.cpp
-SOURCES += main.cpp
 SOURCES += service.cpp
+SOURCES += main.cpp
 
 
 SOURCES_DIRS += $(ROOTDIR)/utils
@@ -21,6 +21,7 @@ SOURCES += gettid.c
 SOURCES += global.cpp
 SOURCES += logger.c
 SOURCES += signal_handlers.cpp
+SOURCES += event.cpp
 SOURCES += time.c
 
 LIBS += pthread
