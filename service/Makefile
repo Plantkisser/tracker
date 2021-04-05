@@ -9,7 +9,6 @@ CFLAGS += -DDEBUG_LEVEL_DEFAULT=10
 SOURCES += client.cpp
 SOURCES += timer.cpp
 SOURCES += tracer.cpp
-SOURCES += event.cpp
 SOURCES += service.cpp
 SOURCES += main.cpp
 
@@ -23,6 +22,7 @@ SOURCES += logger.c
 SOURCES += signal_handlers.cpp
 SOURCES += event.cpp
 SOURCES += time.c
+SOURCES += event.cpp
 
 LIBS += pthread
 LIBS += rt

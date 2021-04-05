@@ -18,7 +18,7 @@ static void report_state(const char* state)
   IPRINTF("service '%s' (%s UTC)", state, date_time_string);
 }
 
-// argument is a path to the config
+
 int main(int /*argc*/, const char** /*argv*/)
 {
 

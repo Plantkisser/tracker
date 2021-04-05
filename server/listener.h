@@ -4,6 +4,9 @@
 #include <thread>
 #include <mutex>
 
+/*
+	listen and add new clients to Handler
+*/
 
 class Listener
 {

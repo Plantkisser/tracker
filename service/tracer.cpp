@@ -581,7 +581,10 @@ void Tracer:: process_event(s_state_info event)
 			if (ptrace(PTRACE_SYSCALL, event.pid, NULL, NULL) == -1)
 			{
 				EPRINTF("PTRACE_SYSCALL");
-				exit(0);
+				{
+					std::lock_guard<std::recursive_mutex> lock_guard(mutex_);
+					procs_inf_.erase(procs_inf_.find(s_proc_inf{event.pid, 0}));
+				}
 			}
 		}
 		break;

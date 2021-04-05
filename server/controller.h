@@ -2,6 +2,7 @@
 #include <string>
 
 
+//this class contain blocked paths and compare requested path with blocked
 class Controller
 {
 private:

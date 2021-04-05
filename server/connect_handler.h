@@ -6,6 +6,11 @@
 #include "controller.h"
 #include "event.h"
 
+
+/*
+	treat requsets of clients and send decision of class Controller
+*/
+
 class Handler
 {
 private:
@@ -13,7 +18,7 @@ private:
 	std::list<int> client_sockets_; // list is used because sockets must be removed when connection ends or interrupted
 	mutable std::recursive_mutex mutex_;
 	bool shutdown_ = false;
-	bool modified_ = false;
+	bool modified_ = false; // list modifying
 
 	std::thread handler_;
 	static void run_proxy(void*);

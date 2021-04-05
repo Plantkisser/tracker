@@ -24,6 +24,7 @@ bool Service::onEvent(tracer::event::Type EventType, const void* eventData)
   switch(EventType)
   {
     case tracer::event::Type::OPEN:
+      IPRINTF("OPEN");
     case tracer::event::Type::OPENAT:
     {
       path = ((tracer::event::data:: Open*) eventData)->data_path; 
@@ -31,6 +32,7 @@ bool Service::onEvent(tracer::event::Type EventType, const void* eventData)
     }
     case tracer::event::Type::EXEC:
     {
+      IPRINTF("OPEN");
       path = ((tracer::event::data:: Exec*) eventData)->child_path;
       break;
     }
@@ -40,7 +42,7 @@ bool Service::onEvent(tracer::event::Type EventType, const void* eventData)
   }
 
 
-  return controller_.is_allowed(EventType, path);//return ++event_count % 3;
+  return controller_.is_allowed(EventType, path);
 }
 
 //config file conatin ip address and port of the server

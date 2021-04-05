@@ -1,5 +1,9 @@
 #include "event.h"
 
+
+/*
+	Class send requests about syscalls to the server and return its decision 
+*/
 class ClientController
 {
 private:
@@ -7,6 +11,10 @@ private:
 public:
 	bool is_allowed(tracer::event::Type syscall_type, const char* path);
 
-	ClientController(const char* config_file);
+	/*
+		config_file is path to the config file which contains ip address and port of server 
+		look at directory controller to see example of such file
+	*/
+	ClientController(const char* config_file); 
 	~ClientController();
 };

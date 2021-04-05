@@ -1,8 +1,9 @@
 #define SLEEP_TIME_NS 100000000
 
 #include "connect_handler.h"
-#include "inet_event.h"
+#include "event.h"
 #include "parser.h"
+#include "debug.h"
 
 #include <algorithm>
 
@@ -49,7 +50,6 @@ void Handler:: run_handler_routine()
 				}
 
 				nfds = client_sockets_.size();
-				std::cout << nfds << std:: endl;
 				arr_sck = new pollfd[nfds]; 
 
 				int i = 0;
@@ -116,17 +116,19 @@ void Handler:: run_handler_routine()
 
 				if (res != sizeof(mesg))
 				{
-					std::cout << "Strange message" << std::endl;
-					std::cout << "Path: " << mesg.path << " " << res << " " << mesg.decision << std::endl;
+					IPRINTF("Strange message\nPath:%s %d\n", mesg.path, (int)res);
 				}
 
 				switch (mesg.event)
 				{
+					//case tracer::event::Type::OPENAT
 					case tracer::event::Type::OPEN:
+						IPRINTF("OPEN");
 						mesg.decision = open_cntlr_.is_allowed(mesg.path);
 						send(arr_sck[i].fd, &mesg, sizeof(mesg), 0);
 						break;
 					case tracer::event::Type::EXEC:
+						IPRINTF("EXEC");
 						mesg.decision = exec_cntlr_.is_allowed(mesg.path);
 						send(arr_sck[i].fd, &mesg, sizeof(mesg), 0);
 						break;

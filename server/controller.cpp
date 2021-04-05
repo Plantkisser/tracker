@@ -1,4 +1,5 @@
 #include "controller.h"
+#include "debug.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -35,6 +36,7 @@ bool Controller:: is_allowed(const char* path)
 	int size = blocked_path_.size();
 	for (int i = 0; i < size; ++i)
 	{
+		IPRINTF("%s and %s\n", path, blocked_path_[i].c_str());
 		if (!strcmp(path, blocked_path_[i].c_str()))
 			return false;
 	}
