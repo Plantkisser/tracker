@@ -369,7 +369,7 @@ void Tracer:: process_syscall(s_state_info event)
 
 	switch(event.registers.orig_rax)
 	{
-		case event::OPEN:
+		case static_cast <unsigned long> (event::Type::OPEN):
 		{
 			try
 			{
@@ -399,7 +399,7 @@ void Tracer:: process_syscall(s_state_info event)
 
 			break;
 		}
-		case event::EXEC:
+		case static_cast <unsigned long> (event::Type::EXEC):
 		{
 			try
 			{
@@ -428,7 +428,7 @@ void Tracer:: process_syscall(s_state_info event)
 			}
 			break;	
 		}
-		case event::OPENAT:
+		case static_cast <unsigned long> (event::Type::OPENAT):
 		{
 			try
 			{

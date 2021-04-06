@@ -1,4 +1,5 @@
 #define SLEEP_TIME_NS 100000000
+#define POLL_TIMEOUT_MS 100;
 
 #include "connect_handler.h"
 #include "event.h"
@@ -72,7 +73,7 @@ void Handler:: run_handler_routine()
 			continue;
 		}
 
-		int timeout = 1000; // ms
+		int timeout = POLL_TIMEOUT_MS; // ms
 		poll(arr_sck, nfds, timeout);
 
 		for(unsigned int i = 0; i < nfds; ++i)
@@ -121,7 +122,7 @@ void Handler:: run_handler_routine()
 
 				switch (mesg.event)
 				{
-					//case tracer::event::Type::OPENAT
+					case tracer::event::Type::OPENAT:
 					case tracer::event::Type::OPEN:
 						IPRINTF("OPEN");
 						mesg.decision = open_cntlr_.is_allowed(mesg.path);

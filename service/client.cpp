@@ -20,12 +20,14 @@ bool ClientController:: is_allowed(tracer::event::Type syscall_type, const char*
 	tracer::event::inet::Message request;
 	request.event = syscall_type;
 	if (path)
-		sprintf(request.path, "%s", path);
+		strcpy(request.path, path);
 	else
 		memset(request.path, 0, sizeof(request.path)); 
 
 	request.decision = false;
-	if (send(server_socket_, &request, sizeof(request), 0) <= 0 || recv(server_socket_, &request, sizeof(request), 0) <= 0) // what if count of bytes doesn't equal size of struct Message
+	if (send(server_socket_, &request, sizeof(request), 0) <= 0 
+		|| recv(server_socket_, &request, sizeof(request), 0) <= 0) 
+		// should treat case when count of bytes doesn't equal size of struct Message
 	{
 		perror("send recv");
 		throw(std::runtime_error("problem with client-server communication"));

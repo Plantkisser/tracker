@@ -32,7 +32,7 @@ bool Service::onEvent(tracer::event::Type EventType, const void* eventData)
     }
     case tracer::event::Type::EXEC:
     {
-      IPRINTF("OPEN");
+      IPRINTF("EXEC");
       path = ((tracer::event::data:: Exec*) eventData)->child_path;
       break;
     }
@@ -45,8 +45,8 @@ bool Service::onEvent(tracer::event::Type EventType, const void* eventData)
   return controller_.is_allowed(EventType, path);
 }
 
-//config file conatin ip address and port of the server
-//maybe controller_ should start in Service::start
+/*  config file contain ip address and port of the server
+    maybe controller_ should start in Service::start */
 Service::Service(const char* config_file): // may throw
 controller_(config_file)
 {
