@@ -1,5 +1,5 @@
 #define SLEEP_TIME_NS 100000000
-#define POLL_TIMEOUT_MS 100;
+#define POLL_TIMEOUT_MS 100
 
 #include "connect_handler.h"
 #include "event.h"
@@ -13,6 +13,21 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <unistd.h>
+
+/*POLLOUT -----------------------------*/
+
+/*supporting structures for convenient working with sockets*/
+
+struct Message_for_sending
+{
+	int socket;
+	tracer::event::inet::Message mesg;
+	unsigned offset;
+
+	Message_for_sending(int sck, tracer::event::inet::Message message, unsigned off): socket(sck), 
+	mesg(message), offset(off) {}
+};
+
 
 
 
@@ -31,8 +46,12 @@ void Handler:: run_proxy(void* ptr)
 
 void Handler:: run_handler_routine()
 {
-	struct pollfd* arr_sck = NULL;
-	nfds_t nfds = 0;
+	std::vector<pollfd> arr_sck; 	// this used by poll
+
+	std::list<Message_for_sending> send_list; 	// contain messages which will be sent 
+									// when poll confirm that it is available
+
+	nfds_t nfds = 0; 				// amount of sockets which we are 'polling'
 
 	while(1)
 	{
@@ -45,20 +64,20 @@ void Handler:: run_handler_routine()
 
 			if (modified_)
 			{
-				if (arr_sck)
+				if (arr_sck.size())
 				{
-					delete[] arr_sck;
+					arr_sck.clear();
 				}
-
-				nfds = client_sockets_.size();
-				arr_sck = new pollfd[nfds]; 
 
 				int i = 0;
 				for (auto it = client_sockets_.begin(); it != client_sockets_.end(); ++i, ++it)
 				{
-					arr_sck[i].fd = *it;
-					arr_sck[i].events = POLLIN;
+					struct pollfd tmp;
+					tmp.fd = *it;
+					tmp.events = POLLIN;
+					arr_sck.push_back(tmp);
 				}
+				nfds = arr_sck.size();
 
 				modified_ = false;
 			}
@@ -74,75 +93,120 @@ void Handler:: run_handler_routine()
 		}
 
 		int timeout = POLL_TIMEOUT_MS; // ms
-		poll(arr_sck, nfds, timeout);
+		poll(arr_sck.data(), nfds, timeout);
 
 		for(unsigned int i = 0; i < nfds; ++i)
 		{
-			if (arr_sck[i].revents == POLLRDHUP)
+			switch (arr_sck[i].revents)
 			{
-				std::lock_guard<std::recursive_mutex> lock_guard(mutex_);
-				client_sockets_.erase(find(client_sockets_.begin(), client_sockets_.end(), arr_sck[i].fd));
-				close(arr_sck[i].fd);
-				modified_ = true;
-			}
-
-			if (arr_sck[i].revents == POLLIN)
-			{
-				tracer::event::inet::Message mesg;
-				ssize_t res = recv(arr_sck[i].fd, &mesg, sizeof(mesg), 0);
-
-				if (res == 0)
+				case POLLRDHUP:
 				{
 					std::lock_guard<std::recursive_mutex> lock_guard(mutex_);
 					client_sockets_.erase(find(client_sockets_.begin(), client_sockets_.end(), arr_sck[i].fd));
-					close(arr_sck[i].fd);
+					shutdown(arr_sck[i].fd, SHUT_RDWR);
 					modified_ = true;
-					continue;
+					break;
 				}
-
-				if (res < 0)
+				case POLLIN:
 				{
-					if (errno == EBADF)
+					tracer::event::inet::Message mesg;
+					ssize_t res = recv(arr_sck[i].fd, &mesg, sizeof(mesg), MSG_DONTWAIT);
+					if (res == 0)
 					{
 						std::lock_guard<std::recursive_mutex> lock_guard(mutex_);
 						client_sockets_.erase(find(client_sockets_.begin(), client_sockets_.end(), arr_sck[i].fd));
-						close(arr_sck[i].fd);
+						shutdown(arr_sck[i].fd, SHUT_RDWR);
 						modified_ = true;
+						continue;
 					}
-					else
+					if (res < 0 && (errno == EWOULDBLOCK || errno == EAGAIN))
 					{
-						perror("Handler recv");
+						IPRINTF("NOMSG");
+						continue;
 					}
-				}
 
-				if (res != sizeof(mesg))
-				{
-					IPRINTF("Strange message\nPath:%s %d\n", mesg.path, (int)res);
-				}
+					if (res < 0)
+					{
+						if (errno == EBADF)
+						{
+							std::lock_guard<std::recursive_mutex> lock_guard(mutex_);
+							client_sockets_.erase(find(client_sockets_.begin(), client_sockets_.end(), arr_sck[i].fd));
+							shutdown(arr_sck[i].fd, SHUT_RDWR);
+							modified_ = true;
+						}
+						else
+						{
+							perror("Handler recv");
+						}
+					}
 
-				switch (mesg.event)
+					if (res != sizeof(mesg))
+					{
+						IPRINTF("Strange message\nPath:%s %d\n", mesg.path, (int)res);
+					}
+
+
+					switch (mesg.event)
+					{
+						case tracer::event::Type::OPENAT:
+						case tracer::event::Type::OPEN:
+							IPRINTF("OPEN");
+							mesg.decision = open_cntlr_.is_allowed(mesg.path);
+							break;
+						case tracer::event::Type::EXEC:
+							IPRINTF("EXEC");
+							mesg.decision = exec_cntlr_.is_allowed(mesg.path);
+							break;
+						default:
+							mesg.decision = true;
+							break;
+					}
+					send_list.push_back(Message_for_sending(arr_sck[i].fd, mesg, 0));
+					
+					//sleep(5);
+					//send(arr_sck[i].fd, &mesg, sizeof(tracer::event::inet::Message), MSG_DONTWAIT | MSG_NOSIGNAL);
+					arr_sck[i].events = POLLOUT;
+
+					break;
+				}
+				case POLLOUT:
 				{
-					case tracer::event::Type::OPENAT:
-					case tracer::event::Type::OPEN:
-						IPRINTF("OPEN");
-						mesg.decision = open_cntlr_.is_allowed(mesg.path);
-						send(arr_sck[i].fd, &mesg, sizeof(mesg), 0);
-						break;
-					case tracer::event::Type::EXEC:
-						IPRINTF("EXEC");
-						mesg.decision = exec_cntlr_.is_allowed(mesg.path);
-						send(arr_sck[i].fd, &mesg, sizeof(mesg), 0);
-						break;
-					default:
-						mesg.decision = true;
-						send(arr_sck[i].fd, &mesg, sizeof(mesg), 0);
-						break;
+					for (auto it = send_list.begin(); it != send_list.end(); )
+					{
+						if (it->socket != arr_sck[i].fd)
+						{
+							++it;
+							continue;
+						}
+
+						int res = send(arr_sck[i].fd, &(it->mesg) + it->offset, sizeof(tracer::event::inet::Message)-it->offset, MSG_DONTWAIT | MSG_NOSIGNAL);
+
+						if (res < 0  && (errno == EWOULDBLOCK || errno == EAGAIN || errno == ENOMEM)) // find another cases when server don't need to close socket
+						{
+							perror("send");
+							break;
+						}
+						if (res < 0)
+						{
+							perror("send to client");
+							// correctly close connection
+						}
+						it->offset += res;
+
+						if (it->offset == sizeof(tracer::event::inet::Message))
+						{
+							it = send_list.erase(it);
+							arr_sck[i].events = POLLIN;
+						}
+						else
+							++it;
+					}
+					break;
 				}
 			}
 		}
-
-
 	}
+	return;
 }
 
 Handler:: Handler(const char* open_blocked_paths, const char* exec_blocked_paths):

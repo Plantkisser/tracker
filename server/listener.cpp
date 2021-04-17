@@ -1,5 +1,8 @@
 #define PORT 50000
 #define SLEEP_TIME_NS 50000000
+#define LISTEN_QUEUE 50000
+#define BIND_SLEEP_S 2
+
 #include "listener.h"
 
 #include <netinet/ip.h>
@@ -32,27 +35,22 @@ void Listener:: run_listener_routine()
 	s_in.sin_port = htons(PORT);
 	s_in.sin_addr.s_addr = INADDR_ANY;
 
-	if (bind(listen_sck, (sockaddr*) &s_in, sizeof(s_in)))
+	while(bind(listen_sck, (sockaddr*) &s_in, sizeof(s_in)))
 	{
 		perror("bind");
-		return;
+		timespec req;
+		req.tv_sec = BIND_SLEEP_S;
+		req.tv_nsec = 0;
+		nanosleep(&req, NULL);
 	}
 
-	if (listen(listen_sck, 3) < 0)
+	if (listen(listen_sck, LISTEN_QUEUE) < 0)
 	{
 		perror("listen");
 		return;
 	}
 	
-	socklen_t len;
-	getsockname(listen_sck, (struct sockaddr*) &s_in, &len);
-	if (len != sizeof(struct sockaddr_in))
-	{
-		printf("Another type\n");
-		return;
-	}
-
-
+	
 	fcntl(listen_sck, F_SETFL, O_NONBLOCK);
 	while(1)
 	{
@@ -69,6 +67,11 @@ void Listener:: run_listener_routine()
 			req.tv_sec = 0;
 			req.tv_nsec = SLEEP_TIME_NS;
 			nanosleep(&req, NULL);
+			continue;
+		}
+		if (new_sck < 0)
+		{
+			perror("accept");
 			continue;
 		}
 

@@ -15,23 +15,43 @@
 #include <arpa/inet.h>
 #include <errno.h>
 
+#include "debug.h"
+
 bool ClientController:: is_allowed(tracer::event::Type syscall_type, const char* path)
 {
+	//if (syscall_type != tracer::event::Type::OPEN 
+	//	&& syscall_type != tracer::event::Type::EXEC)
+	//	return true;
+
 	tracer::event::inet::Message request;
 	request.event = syscall_type;
 	if (path)
+	{
 		strcpy(request.path, path);
+	}
 	else
+	{
 		memset(request.path, 0, sizeof(request.path)); 
+	}
+	
 
 	request.decision = false;
-	if (send(server_socket_, &request, sizeof(request), 0) <= 0 
-		|| recv(server_socket_, &request, sizeof(request), 0) <= 0) 
-		// should treat case when count of bytes doesn't equal size of struct Message
+	if (send(server_socket_, &request, sizeof(request), 0) <= 0)
 	{
-		perror("send recv");
+		perror("send");
+		throw(std::runtime_error("problem with client-server communication"));
+	} 
+
+	int res = 0;
+	while ((res = recv(server_socket_, &request, sizeof(request), MSG_WAITALL)) <= 0 
+		&& errno == EINTR);
+		// should treat case when count of bytes doesn't equal size of struct Message
+	if (res < 0)
+	{
+		perror("recv");
 		throw(std::runtime_error("problem with client-server communication"));
 	}
+	IPRINTF("PASSED");
 	return request.decision;
 }
 

@@ -23,23 +23,15 @@ struct Open
 } // namespace data
 
 
-enum Syscalls
+
+enum class Type
 {
   EXEC = 59,
   OPEN = 2,
   OPENAT = 257,
   READ = 0,
   WRITE = 1,
-};
-
-enum class Type
-{
-  EXEC,
-  OPEN,
-  OPENAT,
-  READ,
-  WRITE,
-  UNKNOWN
+  UNKNOWN = 10000000
 };
 
 

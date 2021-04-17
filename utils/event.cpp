@@ -5,7 +5,7 @@ namespace tracer
 namespace event
 {
 	#define CASE(SYSCALL) \
-	case SYSCALL: return #SYSCALL
+	case static_cast<unsigned> (Type::SYSCALL): return #SYSCALL
 
 	const char* toString(unsigned int type)
 	{
